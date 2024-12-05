@@ -1,0 +1,27 @@
+body {
+    @apply bg-sky-900 font-["system-ui"];
+}
+.container {
+    @apply flex items-center justify-center mt-8;
+}
+.content {
+    @apply px-9 pt-10 pb-14 flex flex-col gap-y-8 text-white rounded-xl max-w-[810px] max-h-[468px];
+}
+.loader {
+    @apply hidden fixed top-0 left-0 w-full h-full bg-black bg-opacity-50 flex items-center justify-center;
+}
+.code {
+    @apply font-["courier"] p-4 flex flex-col text-white break-words max-h-[800px]
+}
+.h1 {
+    @apply text-4xl pb-4 font-bold underline;
+}
+.button {
+    @apply h-auto rounded-xl bg-white text-black py-3 px-6 w-full hover:bg-sky-300 duration-300;
+}
+.button span {
+    @apply text-black font-semibold;
+}
+.svg {
+    @apply inline w-10 h-10 text-gray-200 animate-spin dark:text-gray-600 fill-blue-600;
+}
