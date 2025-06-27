@@ -3,6 +3,7 @@
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\RequestException;
 use GuzzleHttp\Promise;
+use GuzzleHttp\Promise\Utils;
 
 class ResourceSizeChecker
 {
@@ -152,7 +153,7 @@ class ResourceSizeChecker
             $this->resourceLoadTimes[$url] = microtime(true);
         }
 
-        $results = Promise\settle($promises)->wait();
+        $results = Utils::settle($promises)->wait();
 
         return $results;
     }
@@ -341,6 +342,10 @@ class ResourceSizeChecker
      */
     public function checkPage(string $url, string $arg = ''): string
     {
+        if (!$this->validateUrl($url)) {
+            return "Error: Invalid or non-public URL provided.";
+        }
+
         try {
             $response = $this->client->request('GET', $url);
             $body     = $response->getBody()->getContents();
@@ -352,8 +357,23 @@ class ResourceSizeChecker
 
             $pageSpeed = $pageTime = $markup1 = $markup2 = '';
 
+            $promises = [];
             foreach ($resources as $resourceUrl) {
-                $size = $this->getResourceSize($resourceUrl);
+                $promises[$resourceUrl] = $this->client->getAsync($resourceUrl);
+            }
+
+            $results = Utils::settle($promises)->wait();
+
+            foreach ($results as $resourceUrl => $result) {
+                $size = 0;
+                if ($result['state'] === 'fulfilled') {
+                    /** @var \GuzzleHttp\Psr7\Response $response */
+                    $response = $result['value'];
+                    if ($response->getStatusCode() === 200) {
+                        $size = $response->getBody()->getSize();
+                    }
+                }
+
                 $totalBytes += $size;
                 $resourceData[] = [$resourceUrl, $this->bytesToKo($size), $this->bytesToMo($size)];
 
@@ -737,6 +757,49 @@ class ResourceSizeChecker
         }
 
         return false;
+    }
+
+    /**
+     * Validate a URL to ensure it is public and not a local resource.
+     *
+     * @param string $url The URL to validate.
+     * @return bool True if the URL is valid and public, false otherwise.
+     */
+    private function validateUrl(string $url): bool
+    {
+        // 1. Basic URL validation
+        if (!filter_var($url, FILTER_VALIDATE_URL)) {
+            return false;
+        }
+
+        $parsedUrl = parse_url($url);
+
+        // 2. Scheme check
+        if (!isset($parsedUrl['scheme']) || !in_array($parsedUrl['scheme'], ['http', 'https'])) {
+            return false;
+        }
+
+        // 3. Host check - prevent requests to local/private networks
+        if (!isset($parsedUrl['host'])) {
+            return false;
+        }
+        
+        $host = $parsedUrl['host'];
+        // For IPv6 localhost
+        if ($host === '[::1]') {
+            return false;
+        }
+        $ip = gethostbyname($host);
+
+        if ($ip === $host && !filter_var($ip, FILTER_VALIDATE_IP)) {
+            return false;
+        }
+
+        if (!filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE)) {
+            return false;
+        }
+
+        return true;
     }
 
 }
