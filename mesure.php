@@ -10,6 +10,7 @@ class ResourceSizeChecker
     private $client;
     private $resourceLoadTimes = [];
     private $cache             = [];
+    private $apiKey;
 
     private $totalCssWeight   = 0;
     private $totalJsWeight    = 0;
@@ -29,8 +30,9 @@ class ResourceSizeChecker
      * 
      * Initializes the Guzzle HTTP client with specific settings
      */
-    public function __construct()
+    public function __construct(?string $apiKey = null)
     {
+        $this->apiKey = $apiKey;
         $userAgent    = ($this->isCli()) ? 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:129.0) Gecko/20100101 Firefox/129.0' : $_SERVER['HTTP_USER_AGENT'];
         $this->client = new Client([
             'timeout'          => 300,
@@ -97,15 +99,18 @@ class ResourceSizeChecker
      */
     private function getPageSpeed(string $url, string $strategy = 'desktop'): array
     {
-        $api      = 'https://www.googleapis.com/pagespeedonline/v5/runPagespeed';
-        $response = $this->client->request('GET', $api, [
-            'query' => [
-                'url'      => $url,
-                'strategy' => $strategy,
-                'category' => 'performance',
-                //'key'      => 'FREE',
-            ],
-        ]);
+        $api   = 'https://www.googleapis.com/pagespeedonline/v5/runPagespeed';
+        $query = [
+            'url'      => $url,
+            'strategy' => $strategy,
+            'category' => 'performance',
+        ];
+
+        if ($this->apiKey) {
+            $query['key'] = $this->apiKey;
+        }
+
+        $response = $this->client->request('GET', $api, ['query' => $query]);
 
         $loadTime = 0;
 

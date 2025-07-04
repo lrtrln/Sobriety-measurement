@@ -8,7 +8,7 @@ function loading() {
 }
 
 function checkPagespeed() {
-	const checkbox = document.getElementById('pagespeedCheckbox');
+    const checkbox = document.getElementById('pagespeedCheckbox');
 
     checkbox.addEventListener('change', function() {
         const url = new URL(window.location);

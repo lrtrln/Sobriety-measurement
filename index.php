@@ -62,7 +62,7 @@ $result = run();
                     </div>
                     <div class="flex justify-end">
                         <label>
-                            <input type="checkbox" id="pagespeedCheckbox" <?=isset($_GET['pagespeed']) && $_GET['pagespeed'] == '1' ? 'checked' : ''?>> Inclure analyse Pagespeed
+                            <input type="checkbox" id="pagespeedCheckbox" name="pagespeed" value="1" <?=isset($_POST['pagespeed']) ? 'checked' : ''?>> Inclure analyse Pagespeed
                         </label>
                     </div>
                     <button type="submit" class="button">
